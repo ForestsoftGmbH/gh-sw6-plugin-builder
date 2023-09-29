@@ -60,7 +60,7 @@ runs:
         compose-file: "docker-compose.yml"
         down-flags: "--volumes"
  
-    - id: run_tests
+    - id: container_start
       shell: bash
       run: |
         attempt=0
@@ -73,16 +73,26 @@ runs:
           echo "Waiting for server to be realy (Current: $CUR_STATUS) (attempt: $attempt)..."
           sleep 2
         done
-        echo "Server is ready!"
-        echo "Running tests"
         docker-compose exec app xdebug.sh enable
+        echo "Server is ready!"
+    
+    - id: setup_tests
+      shell: bash
+      run: |
+          docker-compose exec app xdebug.sh enable   
+          
+    
+    - id: run_tests
+      shell: bash
+      run: |
         docker-compose exec app /var/www/html/vendor/bin/phpunit -c /var/www/html/custom/plugins/${{inputs.plugin_name}}/tests/phpunit.xml --testdox --order-by=random --colors=always
-
+    
     - name: Get next version
       id: get_next_version
       uses: docker://ghcr.io/thenativeweb/get-next-version:2.5.0
       with:
         entrypoint: /action/entrypoint.sh
+    
     - name: Show the next version
       shell: bash
       id: version
