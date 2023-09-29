@@ -7,11 +7,20 @@ inputs:
     description: 'The docker registry'
     required: false
     default: 'ghcr.io'
-  
   DOCKER_USER:
     description: 'The docker registry username'
     required: false
   DOCKER_PASSWORD:
+    description: 'The docker registry password'
+    required: false
+  DOCKER_SECOND_REGISTRY:
+    description: 'The docker registry'
+    required: false
+    default: 'ghcr.io'
+  DOCKER_SECOND_USER:
+    description: 'The docker registry username'
+    required: false
+  DOCKER_SECOND_PASSWORD:
     description: 'The docker registry password'
     required: false
   
@@ -30,7 +39,7 @@ runs:
         else 
           COMMIT=${{github.ref_name}}
         fi
-        echo "::set-output name=docker_tag::$COMMIT"
+        echo "::set-output name=docker_SECOND_tag::$COMMIT"
     - uses: actions/checkout@v3
       with:
         ref: ${{steps.detect_version.outputs.docker_tag}}
@@ -41,6 +50,11 @@ runs:
       shell: bash
       run: |
           docker login -u ${{inputs.DOCKER_USER}} -p ${{inputs.DOCKER_PASSWORD}} ${{inputs.DOCKER_REGISTRY}}
+    - id: docker_second_login
+      if: inputs.DOCKER_SECOND_USER != '' && inputs.DOCKER_SECOND_PASSWORD != ''
+      shell: bash
+      run: |
+          docker login -u ${{inputs.DOCKER_SECOND_USER}} -p ${{inputs.DOCKER_SECOND_PASSWORD}} ${{inputs.DOCKER_SECOND_REGISTRY}}
     - uses: isbang/compose-action@v1.5.1
       with:
         compose-file: "docker-compose.yml"
