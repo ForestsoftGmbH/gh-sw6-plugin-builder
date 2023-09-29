@@ -91,7 +91,7 @@ runs:
         COMPOSER_AUTH_JSON: ${{ inputs.COMPOSER_AUTH_JSON }}
         File: ./Dockerfile
         context: .
-        Registry: ${{ inputs.DOCKER_REGISTRY }}
+        Registry: "ghcr.io"
         Username: ${{ inputs.GITHUB_USER }}
         Password: ${{ inputs.GITHUB_TOKEN }}
     
