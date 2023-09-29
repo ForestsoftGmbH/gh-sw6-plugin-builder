@@ -8,6 +8,7 @@ inputs:
 
 runs:
   using: "composite"
+  runs-on: self-hosted
   steps:
     - id: detect_version
       shell: bash
