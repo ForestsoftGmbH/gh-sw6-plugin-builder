@@ -24,13 +24,15 @@ runs:
         ref: ${{steps.detect_version.outputs.docker_tag}}
         fetch-depth: 0
     
+    - uses: isbang/compose-action@v1.5.1
+      with:
+        compose-file: "docker-compose.yml"
+        down-flags: "--volumes"
     - id: run_tests
       shell: bash
       run: |
-        docker-compose up -d
-        # check if app service is up and running
-        while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8000)" != "200" ]]; do sleep 5; done
-        docker compose exec app /var/www/html/vendor/bin/phpunit -c /var/www/html/custom/plugins/${{inputs.plugin_name}}/tests/phpunit.xml
+        while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost)" != "200" ]]; do sleep 5; done
+        docker-compose exec app /var/www/html/vendor/bin/phpunit -c /var/www/html/custom/plugins/${{inputs.plugin_name}}/tests/phpunit.xml
 
     - name: Get next version
       id: get_next_version
