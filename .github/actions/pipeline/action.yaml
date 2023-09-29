@@ -73,13 +73,11 @@ runs:
           echo "Waiting for server to be realy (Current: $CUR_STATUS) (attempt: $attempt)..."
           sleep 2
         done
-        docker-compose exec app xdebug.sh enable
         echo "Server is ready!"
-    
     - id: setup_tests
       shell: bash
       run: |
-          docker-compose exec app xdebug.sh enable   
+          docker-compose exec -T app xdebug.sh enable   
           
     
     - id: run_tests
