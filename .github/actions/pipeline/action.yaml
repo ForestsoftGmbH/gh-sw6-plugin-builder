@@ -59,7 +59,10 @@ runs:
           echo "Waiting for server to be realy (Current: $CUR_STATUS) (attempt: $attempt)..."
           sleep 2
         done
-        docker-compose exec app /var/www/html/vendor/bin/phpunit -c /var/www/html/custom/plugins/${{inputs.plugin_name}}/tests/phpunit.xml
+        echo "Server is ready!"
+        echo "Running tests"
+        docker-compose exec app xdebug.sh enable
+        docker-compose exec app /var/www/html/vendor/bin/phpunit -c /var/www/html/custom/plugins/${{inputs.plugin_name}}/tests/phpunit.xml --testdox --order-by=random --colors=always
 
     - name: Get next version
       id: get_next_version
