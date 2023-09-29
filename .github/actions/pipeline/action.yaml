@@ -36,7 +36,7 @@ runs:
         ref: ${{steps.detect_version.outputs.docker_tag}}
         fetch-depth: 0
     
-    - id: detect_version
+    - id: docker_login
       if: inputs.DOCKER_USER != '' && inputs.DOCKER_PASSWORD != ''
       shell: bash
       run: |
