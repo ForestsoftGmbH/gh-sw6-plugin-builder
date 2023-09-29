@@ -6,6 +6,10 @@ inputs:
   IMAGE_NAME:
     description: 'The name of the image'
     required: false
+  
+  COMPOSER_AUTH_JSON:
+    description: 'composer auth json as base64'
+    required: false
 
   GITHUB_TOKEN:
     description: 'The git token'
@@ -85,7 +89,7 @@ runs:
       with:
         DOCKER_IMAGE: ${{steps.preflight.outputs.BUILD_DOCKER}}
         DOCKER_TAG: ${{steps.detect_version.outputs.docker_tag}}
-        COMPOSER_AUTH_JSON: ${{ secrets.COMPOSER_AUTH_JSON }}
+        COMPOSER_AUTH_JSON: ${{ inputs.COMPOSER_AUTH_JSON }}
         File: ./Dockerfile
         context: .
         Username: ${{ inputs.GITHUB_USER }}
