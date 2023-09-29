@@ -2,6 +2,19 @@ name: Build Shopware Plugin
 description: This pipeline builds a Shopware plugin and pushes it to the GitHub registry.
 
 inputs:
+  
+  DOCKER_REGISTRY:
+    description: 'The docker registry'
+    required: false
+    default: 'ghcr.io'
+  
+  DOCKER_USER:
+    description: 'The docker registry username'
+    required: false
+  DOCKER_PASSWORD:
+    description: 'The docker registry password'
+    required: false
+  
   plugin_name:
     description: 'The name of the plugin'
     required: true
@@ -23,10 +36,16 @@ runs:
         ref: ${{steps.detect_version.outputs.docker_tag}}
         fetch-depth: 0
     
+    - id: detect_version
+      if: inputs.DOCKER_USER != '' && inputs.DOCKER_PASSWORD != ''
+      shell: bash
+      run: |
+          docker login -u ${{inputs.DOCKER_USER}} -p ${{inputs.DOCKER_PASSWORD}} ${{inputs.DOCKER_REGISTRY}}
     - uses: isbang/compose-action@v1.5.1
       with:
         compose-file: "docker-compose.yml"
         down-flags: "--volumes"
+ 
     - id: run_tests
       shell: bash
       run: |
