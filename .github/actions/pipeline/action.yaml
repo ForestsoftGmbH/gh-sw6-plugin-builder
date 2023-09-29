@@ -1,0 +1,58 @@
+name: Build Shopware Plugin
+description: This pipeline builds a Shopware plugin and pushes it to the GitHub registry.
+
+inputs:
+  plugin_name:
+    description: 'The name of the plugin'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - id: detect_version
+      shell: bash
+      run: |
+        if [ "${{github.event.pull_request.head.ref}}" != "" ]; then
+          COMMIT=${{github.event.pull_request.head.ref}}
+        else 
+          COMMIT=${{github.ref_name}}
+        fi
+        echo "::set-output name=docker_tag::$COMMIT"
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{steps.detect_version.outputs.docker_tag}}
+        fetch-depth: 0
+    
+    - id: run_tests
+      shell: bash
+      run: |
+        docker-compose up -d
+        # check if app service is up and running
+        while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8000)" != "200" ]]; do sleep 5; done
+        docker compose exec app /var/www/html/vendor/bin/phpunit -c /var/www/html/custom/plugins/${{inputs.plugin_name}}/tests/phpunit.xml
+
+    - name: Get next version
+      id: get_next_version
+      uses: docker://ghcr.io/thenativeweb/get-next-version:2.5.0
+      with:
+        entrypoint: /action/entrypoint.sh
+    - name: Show the next version
+      shell: bash
+      id: version
+      run: |
+        echo ${{ steps.get_next_version.outputs.version }}
+        echo ${{ steps.get_next_version.outputs.hasNextVersion }}
+        echo "version=${{ steps.get_next_version.outputs.version }}" >> $GITHUB_OUTPUT
+        echo "hasNextVersion=${{ steps.get_next_version.outputs.hasNextVersion }}" >> $GITHUB_OUTPUT
+    - name: Tag version
+      if: inputs.tag_version == 'true' && steps.get_next_version.outputs.hasNextVersion == 'true'
+      shell: bash
+      run: |
+        git config --global user.email ""    
+        git config --global user.name "GitHub Action"
+        git tag ${{ steps.get_next_version.outputs.version }}
+        git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git --follow-tags
+        git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git --tags
+        
+
+       
