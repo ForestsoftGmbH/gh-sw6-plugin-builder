@@ -35,11 +35,12 @@ runs:
       shell: bash
       run: |
         if [ "${{github.event.pull_request.head.ref}}" != "" ]; then
-          COMMIT=${{github.event.pull_request.head.ref}}
+          COMMIT=
+          echo "COMMIT=${{github.event.pull_request.head.ref}}" >> $GITHUB_OUTPUT
         else 
           COMMIT=${{github.ref_name}}
         fi
-        echo "::set-output name=docker_SECOND_tag::$COMMIT"
+        echo "docker_tag=latest" >> $GITHUB_OUTPUT
     - uses: actions/checkout@v3
       with:
         ref: ${{steps.detect_version.outputs.docker_tag}}
@@ -55,6 +56,24 @@ runs:
       shell: bash
       run: |
           docker login -u ${{inputs.DOCKER_SECOND_USER}} -p ${{inputs.DOCKER_SECOND_PASSWORD}} ${{inputs.DOCKER_SECOND_REGISTRY}}
+    - id: preflight
+      shell: bash
+      run: |
+        if [ -f "Dockerfile" ]; then
+          echo "BUILD_DOCKER=forestsoftsebastian/${{inputs.plugin_name}}" >> $GITHUB_OUTPUT
+        fi
+    
+    - uses: ForestsoftGmbH/gh-build-action@main
+      if: steps.preflight.outputs.BUILD_DOCKER != ''
+      with:
+        DOCKER_IMAGE: ${{steps.preflight.outputs.BUILD_DOCKER}}
+        DOCKER_TAG: ${{steps.detect_version.outputs.docker_tag}}
+        COMPOSER_AUTH_JSON: ${{ secrets.COMPOSER_AUTH_JSON }}
+        File: ./Dockerfile
+        context: .
+        Username: ${{ secrets.DOCKER_SECOND_USERNAME }}
+        Password: ${{ secrets.DOCKER_SECOND_PASSWORD }}
+    
     - uses: isbang/compose-action@v1.5.1
       with:
         compose-file: "docker-compose.yml"
