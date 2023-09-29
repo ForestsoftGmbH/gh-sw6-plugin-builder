@@ -49,7 +49,16 @@ runs:
     - id: run_tests
       shell: bash
       run: |
-        while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost)" != "200" ]]; do sleep 5; done
+        attempt=0
+        while [ $attempt -le 59 ]; do
+          CUR_STATUS=$(curl -k -s -o /dev/null -w ''%{http_code}'' https://localhost)
+          if [[ "$CUR_STATUS" != "200" ]]; then
+            break
+          fi
+          attempt=$(( $attempt + 1 ))
+          echo "Waiting for server to be realy (Current: $CUR_STATUS) (attempt: $attempt)..."
+          sleep 2
+        done
         docker-compose exec app /var/www/html/vendor/bin/phpunit -c /var/www/html/custom/plugins/${{inputs.plugin_name}}/tests/phpunit.xml
 
     - name: Get next version
