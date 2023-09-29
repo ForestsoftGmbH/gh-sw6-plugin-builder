@@ -3,6 +3,16 @@ description: This pipeline builds a Shopware plugin and pushes it to the GitHub 
 
 inputs:
   
+  IMAGE_NAME:
+    description: 'The name of the image'
+    required: false
+
+  GITHUB_TOKEN:
+    description: 'The git token'
+    required: false
+  GITHUB_USER:
+    description: 'The github user'
+    required: false
   DOCKER_REGISTRY:
     description: 'The docker registry'
     required: false
@@ -50,17 +60,24 @@ runs:
       if: inputs.DOCKER_USER != '' && inputs.DOCKER_PASSWORD != ''
       shell: bash
       run: |
-          docker login -u ${{inputs.DOCKER_USER}} -p ${{inputs.DOCKER_PASSWORD}} ${{inputs.DOCKER_REGISTRY}}
+        echo "${{inputs.DOCKER_PASSWORD}}" | docker login -u ${{inputs.DOCKER_USER}} ${{inputs.DOCKER_REGISTRY}} --password-stdin
     - id: docker_second_login
       if: inputs.DOCKER_SECOND_USER != '' && inputs.DOCKER_SECOND_PASSWORD != ''
       shell: bash
       run: |
-          docker login -u ${{inputs.DOCKER_SECOND_USER}} -p ${{inputs.DOCKER_SECOND_PASSWORD}} ${{inputs.DOCKER_SECOND_REGISTRY}}
+          echo "${{inputs.DOCKER_SECOND_PASSWORD}}" | docker login -u ${{inputs.DOCKER_SECOND_USER}} ${{inputs.DOCKER_SECOND_REGISTRY}} --password-stdin
+    
+    - name: Login into Github Docker Registery
+      if: inputs.GITHUB_TOKEN != ''
+      shell: bash
+      run: echo "${{ inputs.GITHUB_TOKEN  }}" | docker login ghcr.io -u ${{ inputs.GITHUB_USER }} --password-stdin
+            
     - id: preflight
+      if: inputs.IMAGE_NAME != ''
       shell: bash
       run: |
         if [ -f "Dockerfile" ]; then
-          echo "BUILD_DOCKER=forestsoftsebastian/${{inputs.plugin_name}}" >> $GITHUB_OUTPUT
+          echo "BUILD_DOCKER=${{inputs.IMAGE_NAME}}" >> $GITHUB_OUTPUT
         fi
     
     - uses: ForestsoftGmbH/gh-build-action@main
@@ -71,8 +88,8 @@ runs:
         COMPOSER_AUTH_JSON: ${{ secrets.COMPOSER_AUTH_JSON }}
         File: ./Dockerfile
         context: .
-        Username: ${{ secrets.DOCKER_SECOND_USERNAME }}
-        Password: ${{ secrets.DOCKER_SECOND_PASSWORD }}
+        Username: ${{ inputs.GITHUB_USER }}
+        Password: ${{ inputs.GITHUB_TOKEN }}
     
     - uses: isbang/compose-action@v1.5.1
       with:
