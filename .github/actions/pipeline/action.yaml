@@ -100,20 +100,11 @@ runs:
         compose-file: "docker-compose.yml"
         down-flags: "--volumes"
  
-    - id: container_start
-      shell: bash
-      run: |
-        attempt=0
-        while [ $attempt -le 59 ]; do
-          CUR_STATUS=$(curl -k -s -o /dev/null -w ''%{http_code}'' https://localhost)
-          if [[ "$CUR_STATUS" != "200" ]]; then
-            break
-          fi
-          attempt=$(( $attempt + 1 ))
-          echo "Waiting for server to be realy (Current: $CUR_STATUS) (attempt: $attempt)..."
-          sleep 2
-        done
-        echo "Server is ready!"
+    - uses: forestsoftgmbh/wait-for-it@main
+      with:
+        host: "localhost"
+        port: "443"
+    
     - id: setup_tests
       shell: bash
       run: |
