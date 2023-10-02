@@ -105,6 +105,12 @@ runs:
         host: "localhost"
         port: "443"
     
+    - id: fail_logs
+      if: failure()
+      shell: bash
+      run: |
+         docker-compose logs app
+         docker-compose logs database
     - id: setup_tests
       shell: bash
       run: |
